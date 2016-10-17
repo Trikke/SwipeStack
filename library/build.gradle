@@ -5,34 +5,34 @@ def final String VERSION_NAME = "0.3.0"
 def final int VERSION_CODE = 30
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.2"
+	compileSdkVersion 23
+	buildToolsVersion "23.0.3"
 
-    defaultConfig {
-        minSdkVersion 16
-        targetSdkVersion 23
-        versionCode VERSION_CODE
-        versionName VERSION_NAME
-    }
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-    }
+	defaultConfig {
+		minSdkVersion 16
+		targetSdkVersion 23
+		versionCode VERSION_CODE
+		versionName VERSION_NAME
+	}
+	buildTypes {
+		release {
+			minifyEnabled false
+			proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+		}
+	}
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    testCompile 'junit:junit:4.12'
-    compile 'com.android.support:appcompat-v7:23.1.1'
+	compile fileTree(dir: 'libs', include: ['*.jar'])
+	testCompile 'junit:junit:4.12'
+	compile 'com.android.support:appcompat-v7:23.1.1'
 }
 
 publish {
-    userOrg = 'flschweiger'
-    groupId = 'link.fls'
-    artifactId = 'swipestack'
-    publishVersion = VERSION_NAME
-    desc = 'A swipeable view stack for Android.'
-    website = 'https://github.com/flschweiger/SwipeStack'
+	userOrg = 'flschweiger'
+	groupId = 'link.fls'
+	artifactId = 'swipestack'
+	publishVersion = VERSION_NAME
+	desc = 'A swipeable view stack for Android.'
+	website = 'https://github.com/flschweiger/SwipeStack'
 }
