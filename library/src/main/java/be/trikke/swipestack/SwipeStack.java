@@ -24,6 +24,7 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Adapter;
@@ -69,6 +70,8 @@ public class SwipeStack extends ViewGroup {
 	private SwipeProgressListener mProgressListener;
 
 	private float[] preSwipePositions;
+	private float[] preSwipeScaleX;
+	private float[] preSwipeScaleY;
 
 	public SwipeStack(Context context) {
 		this(context, null);
@@ -218,6 +221,7 @@ public class SwipeStack extends ViewGroup {
 				mSwipeHelper.unregisterObservedView();
 				mTopView = childView;
 				mSwipeHelper.registerObservedView(mTopView, newPositionX, newPositionY);
+				scaleFactor = 1;
 			}
 
 			if (!mIsFirstLayout) {
@@ -240,8 +244,8 @@ public class SwipeStack extends ViewGroup {
 		}
 	}
 
-	private void animateStackOnProgress(float progress, boolean useAnimation) {
-		progress = Math.min(1, Math.abs(progress) * 2);
+	private void animateStackOnProgress(float progress, boolean useAnimation, int animationTime) {
+		progress = Math.abs(progress);
 		for (int x = 0; x < getChildCount(); x++) {
 			int topViewIndex = getChildCount() - 1;
 			if (x != topViewIndex) {
@@ -249,12 +253,25 @@ public class SwipeStack extends ViewGroup {
 				float startPositionY = preSwipePositions[x];
 				float nextPositionY = preSwipePositions[x + 1];
 
-				float diff = (startPositionY - nextPositionY);
-				float newPositionY = (float) (startPositionY - Math.ceil((diff * progress)));
+				float startScaleX = preSwipeScaleX[x];
+				float nextScaleX = preSwipeScaleX[x + 1];
+
+				float startScaleY = preSwipeScaleY[x];
+				float nextScaleY = preSwipeScaleY[x + 1];
+
+				float diffPositionY = (startPositionY - nextPositionY);
+				float diffScaleX = (startScaleX - nextScaleX);
+				float diffScaleY = (startScaleY - nextScaleY);
+
+				float newPositionY = (float) (startPositionY - Math.ceil(diffPositionY * progress));
+				float newScaleX = startScaleX - (diffScaleX * progress);
+				float newScaleY = startScaleY - (diffScaleY * progress);
 				if (useAnimation) {
-					childView.animate().y(newPositionY).setDuration(100);
+					childView.animate().y(newPositionY).scaleX(newScaleX).scaleY(newScaleY).setDuration(animationTime);
 				} else {
 					childView.setY(newPositionY);
+					childView.setScaleX(newScaleX);
+					childView.setScaleY(newScaleY);
 				}
 			}
 		}
@@ -266,6 +283,7 @@ public class SwipeStack extends ViewGroup {
 
 	public void resetSwipe() {
 		mSwipeHelper.resetTopViewToPosition();
+		animateStackOnProgress(0f, true, 100);
 	}
 
 	private void removeTopView() {
@@ -288,20 +306,25 @@ public class SwipeStack extends ViewGroup {
 	public void onSwipeStart() {
 		if (mProgressListener != null) mProgressListener.onSwipeStart(getCurrentPosition());
 		preSwipePositions = new float[getChildCount()];
+		preSwipeScaleX = new float[getChildCount()];
+		preSwipeScaleY = new float[getChildCount()];
 		for (int x = 0; x < getChildCount(); x++) {
 			View childView = getChildAt(x);
 			preSwipePositions[x] = childView.getY();
+			preSwipeScaleX[x] = childView.getScaleX();
+			preSwipeScaleY[x] = childView.getScaleY();
 		}
 	}
 
 	public void onSwipeProgress(float progress) {
+		Log.w("Progress", "> " + progress);
 		if (mProgressListener != null) mProgressListener.onSwipeProgress(getCurrentPosition(), progress);
-		animateStackOnProgress(progress, false);
+		animateStackOnProgress(progress, false, 0);
 	}
 
 	public void onSwipeEnd(boolean swipeFullfilled) {
 		if (mProgressListener != null) mProgressListener.onSwipeEnd(getCurrentPosition());
-		if (!swipeFullfilled) animateStackOnProgress(0f, true);
+		animateStackOnProgress(swipeFullfilled ? 1f : 0f, true, 200);
 	}
 
 	public void onViewSwipedToLeft() {
@@ -402,6 +425,7 @@ public class SwipeStack extends ViewGroup {
 	public void swipeTopViewToRight() {
 		if (getChildCount() == 0) return;
 		mSwipeHelper.swipeViewToRight();
+		animateStackOnProgress(1f, true, 500);
 	}
 
 	/**
@@ -410,6 +434,7 @@ public class SwipeStack extends ViewGroup {
 	public void swipeTopViewToLeft() {
 		if (getChildCount() == 0) return;
 		mSwipeHelper.swipeViewToLeft();
+		animateStackOnProgress(1f, true, 500);
 	}
 
 	/**
@@ -430,6 +455,7 @@ public class SwipeStack extends ViewGroup {
 		 * Called when a view has been dismissed to the left.
 		 *
 		 * @param position The position of the view in the adapter currently in use.
+		 * @return boolean indicate if the swiping flow should halt here
 		 */
 		boolean onViewSwipedToLeft(int position);
 
@@ -437,6 +463,7 @@ public class SwipeStack extends ViewGroup {
 		 * Called when a view has been dismissed to the right.
 		 *
 		 * @param position The position of the view in the adapter currently in use.
+		 * @return boolean indicate if the swiping flow should halt here
 		 */
 		boolean onViewSwipedToRight(int position);
 

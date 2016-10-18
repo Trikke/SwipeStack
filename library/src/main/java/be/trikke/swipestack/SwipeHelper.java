@@ -71,19 +71,16 @@ public class SwipeHelper implements View.OnTouchListener {
 				mObservedView.setX(newX);
 				mObservedView.setY(newY);
 
-				float dragDistanceX = newX - mInitialX;
-				float swipeProgress = Math.min(Math.max(dragDistanceX / mSwipeStack.getWidth(), -1), 1);
-
+				float viewCenterHorizontal = newX + (mObservedView.getWidth() / 2) - (mSwipeStack.getWidth() / 2);
+				float swipeProgress = Math.min(Math.max(viewCenterHorizontal / (mSwipeStack.getWidth()) * 2, -1), 1);
 				mSwipeStack.onSwipeProgress(swipeProgress);
 
 				if (mRotateDegrees > 0) {
-					float rotation = mRotateDegrees * swipeProgress;
-					mObservedView.setRotation(rotation);
+					mObservedView.setRotation(mRotateDegrees * swipeProgress);
 				}
 
 				if (mOpacityEnd < 1f) {
-					float alpha = 1 - Math.min(Math.abs(swipeProgress * 2), 1);
-					mObservedView.setAlpha(alpha);
+					mObservedView.setAlpha(1 - Math.min(Math.abs(swipeProgress * 2), 1));
 				}
 
 				return true;
@@ -106,13 +103,11 @@ public class SwipeHelper implements View.OnTouchListener {
 		}
 
 		float viewCenterHorizontal = mObservedView.getX() + (mObservedView.getWidth() / 2);
-		float parentFirstThird = mSwipeStack.getWidth() / 3f;
-		float parentLastThird = parentFirstThird * 2;
 
-		if (viewCenterHorizontal < parentFirstThird && mSwipeStack.getAllowedSwipeDirections() != SwipeStack.SWIPE_DIRECTION_ONLY_RIGHT) {
+		if (viewCenterHorizontal < 0 && mSwipeStack.getAllowedSwipeDirections() != SwipeStack.SWIPE_DIRECTION_ONLY_RIGHT) {
 			mSwipeStack.onSwipeEnd(true);
 			swipeViewToLeft(mAnimationDuration);
-		} else if (viewCenterHorizontal > parentLastThird && mSwipeStack.getAllowedSwipeDirections() != SwipeStack.SWIPE_DIRECTION_ONLY_LEFT) {
+		} else if (viewCenterHorizontal > mSwipeStack.getWidth() && mSwipeStack.getAllowedSwipeDirections() != SwipeStack.SWIPE_DIRECTION_ONLY_LEFT) {
 			mSwipeStack.onSwipeEnd(true);
 			swipeViewToRight(mAnimationDuration);
 		} else {
