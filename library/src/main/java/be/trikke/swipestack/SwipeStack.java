@@ -24,7 +24,6 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Adapter;
@@ -305,6 +304,10 @@ public class SwipeStack extends ViewGroup {
 
 	public void onSwipeStart() {
 		if (mProgressListener != null) mProgressListener.onSwipeStart(getCurrentPosition());
+		setPreSwipeVariables();
+	}
+
+	private void setPreSwipeVariables() {
 		preSwipePositions = new float[getChildCount()];
 		preSwipeScaleX = new float[getChildCount()];
 		preSwipeScaleY = new float[getChildCount()];
@@ -317,7 +320,6 @@ public class SwipeStack extends ViewGroup {
 	}
 
 	public void onSwipeProgress(float progress) {
-		Log.w("Progress", "> " + progress);
 		if (mProgressListener != null) mProgressListener.onSwipeProgress(getCurrentPosition(), progress);
 		animateStackOnProgress(progress, false, 0);
 	}
@@ -424,6 +426,7 @@ public class SwipeStack extends ViewGroup {
 	 */
 	public void swipeTopViewToRight() {
 		if (getChildCount() == 0) return;
+		setPreSwipeVariables();
 		mSwipeHelper.swipeViewToRight();
 		animateStackOnProgress(1f, true, 500);
 	}
@@ -433,6 +436,7 @@ public class SwipeStack extends ViewGroup {
 	 */
 	public void swipeTopViewToLeft() {
 		if (getChildCount() == 0) return;
+		setPreSwipeVariables();
 		mSwipeHelper.swipeViewToLeft();
 		animateStackOnProgress(1f, true, 500);
 	}
