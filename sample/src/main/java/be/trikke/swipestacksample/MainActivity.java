@@ -24,6 +24,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -46,6 +47,8 @@ public class MainActivity extends AppCompatActivity implements SwipeStack.SwipeS
 	private SwipeStack mSwipeStack;
 	private SwipeStackAdapter mAdapter;
 
+	private int fabCardNr = 0;
+
 	@Override protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
@@ -63,6 +66,18 @@ public class MainActivity extends AppCompatActivity implements SwipeStack.SwipeS
 		mAdapter = new SwipeStackAdapter(mData);
 		mSwipeStack.setAdapter(mAdapter);
 		mSwipeStack.setListener(this);
+		mSwipeStack.setSwipeProgressListener(new SwipeStack.SwipeProgressListener() {
+			@Override public void onSwipeStart(int position) {
+				Log.d("p", "started on " + position);
+			}
+
+			@Override public void onSwipeProgress(int position, float progress) {
+			}
+
+			@Override public void onSwipeEnd(int position) {
+				Log.d("p", "ended on " + position);
+			}
+		});
 
 		fillWithTestData();
 	}
@@ -79,7 +94,8 @@ public class MainActivity extends AppCompatActivity implements SwipeStack.SwipeS
 		} else if (v.equals(mButtonRight)) {
 			mSwipeStack.swipeTopViewToRight();
 		} else if (v.equals(mFab)) {
-			mData.add(getString(R.string.dummy_fab));
+			fabCardNr++;
+			mData.add(getString(R.string.dummy_fab) + " " + fabCardNr);
 			mAdapter.notifyDataSetChanged();
 		}
 	}
@@ -135,15 +151,18 @@ public class MainActivity extends AppCompatActivity implements SwipeStack.SwipeS
 
 	@Override public boolean onViewSwipedToRight(int position) {
 		String swipedElement = mAdapter.getItem(position);
-		Toast.makeText(this, getString(R.string.view_swiped_right, swipedElement), Toast.LENGTH_SHORT).show();
+		Log.w("s", position + " > " + getString(R.string.view_swiped_right, swipedElement));
+		mData.remove(position);
+		mAdapter.notifyDataSetChanged();
 		showSwipeDialog();
 		return true;
 	}
 
 	@Override public boolean onViewSwipedToLeft(int position) {
 		String swipedElement = mAdapter.getItem(position);
-		Toast.makeText(this, getString(R.string.view_swiped_left, swipedElement), Toast.LENGTH_SHORT).show();
+		Log.w("s", position + " > " + getString(R.string.view_swiped_left, swipedElement));
 		//showSwipeDialog();
+		Log.w("p", "-> " + mSwipeStack.getCurrentPosition() + " m " + mAdapter.getCount());
 		return false;
 	}
 

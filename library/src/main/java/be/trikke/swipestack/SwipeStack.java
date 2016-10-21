@@ -68,10 +68,6 @@ public class SwipeStack extends ViewGroup {
 	private SwipeStackListener mListener;
 	private SwipeProgressListener mProgressListener;
 
-	private float[] preSwipePositions;
-	private float[] preSwipeScaleX;
-	private float[] preSwipeScaleY;
-
 	public SwipeStack(Context context) {
 		this(context, null);
 	}
@@ -119,8 +115,10 @@ public class SwipeStack extends ViewGroup {
 		mDataObserver = new DataSetObserver() {
 			@Override public void onChanged() {
 				super.onChanged();
-				invalidate();
-				requestLayout();
+				if (getChildCount() < mNumberOfStackedViews) {
+					invalidate();
+					requestLayout();
+				}
 			}
 		};
 	}
@@ -226,20 +224,38 @@ public class SwipeStack extends ViewGroup {
 			if (!mIsFirstLayout) {
 
 				if (isNewView) {
-					childView.setTag(be.trikke.swipestack.R.id.new_view, false);
 					childView.setAlpha(0);
 					childView.setY(newPositionY);
 					childView.setScaleY(scaleFactor);
 					childView.setScaleX(scaleFactor);
+					childView.setTag(be.trikke.swipestack.R.id.new_view, false);
+					childView.setTag(R.id.startX, childView.getX());
+					childView.setTag(R.id.startY, childView.getY());
+					childView.setTag(R.id.startScaleX, childView.getScaleX());
+					childView.setTag(R.id.startScaleY, childView.getScaleY());
 				}
 
 				childView.animate().y(newPositionY).scaleX(scaleFactor).scaleY(scaleFactor).alpha(1).setDuration(100);
 			} else {
-				childView.setTag(be.trikke.swipestack.R.id.new_view, false);
 				childView.setY(newPositionY);
 				childView.setScaleY(scaleFactor);
 				childView.setScaleX(scaleFactor);
+				childView.setTag(be.trikke.swipestack.R.id.new_view, false);
+				childView.setTag(R.id.startX, childView.getX());
+				childView.setTag(R.id.startY, childView.getY());
+				childView.setTag(R.id.startScaleX, childView.getScaleX());
+				childView.setTag(R.id.startScaleY, childView.getScaleY());
 			}
+		}
+	}
+
+	private void rememberPositions() {
+		for (int x = 0; x < getChildCount(); x++) {
+			View childView = getChildAt(x);
+			childView.setTag(R.id.startX, childView.getX());
+			childView.setTag(R.id.startY, childView.getY());
+			childView.setTag(R.id.startScaleX, childView.getScaleX());
+			childView.setTag(R.id.startScaleY, childView.getScaleY());
 		}
 	}
 
@@ -249,14 +265,15 @@ public class SwipeStack extends ViewGroup {
 			int topViewIndex = getChildCount() - 1;
 			if (x != topViewIndex) {
 				View childView = getChildAt(x);
-				float startPositionY = preSwipePositions[x];
-				float nextPositionY = preSwipePositions[x + 1];
+				View nextView = getChildAt(x + 1);
+				float startPositionY = (float) childView.getTag(R.id.startY);
+				float nextPositionY = (float) nextView.getTag(R.id.startY);
 
-				float startScaleX = preSwipeScaleX[x];
-				float nextScaleX = preSwipeScaleX[x + 1];
+				float startScaleX = (float) childView.getTag(R.id.startScaleX);
+				float nextScaleX = (float) nextView.getTag(R.id.startScaleX);
 
-				float startScaleY = preSwipeScaleY[x];
-				float nextScaleY = preSwipeScaleY[x + 1];
+				float startScaleY = (float) childView.getTag(R.id.startScaleY);
+				float nextScaleY = (float) nextView.getTag(R.id.startScaleY);
 
 				float diffPositionY = (startPositionY - nextPositionY);
 				float diffScaleX = (startScaleX - nextScaleX);
@@ -303,20 +320,8 @@ public class SwipeStack extends ViewGroup {
 	}
 
 	public void onSwipeStart() {
+		rememberPositions();
 		if (mProgressListener != null) mProgressListener.onSwipeStart(getCurrentPosition());
-		setPreSwipeVariables();
-	}
-
-	private void setPreSwipeVariables() {
-		preSwipePositions = new float[getChildCount()];
-		preSwipeScaleX = new float[getChildCount()];
-		preSwipeScaleY = new float[getChildCount()];
-		for (int x = 0; x < getChildCount(); x++) {
-			View childView = getChildAt(x);
-			preSwipePositions[x] = childView.getY();
-			preSwipeScaleX[x] = childView.getScaleX();
-			preSwipeScaleY[x] = childView.getScaleY();
-		}
 	}
 
 	public void onSwipeProgress(float progress) {
@@ -426,7 +431,7 @@ public class SwipeStack extends ViewGroup {
 	 */
 	public void swipeTopViewToRight() {
 		if (getChildCount() == 0) return;
-		setPreSwipeVariables();
+		rememberPositions();
 		mSwipeHelper.swipeViewToRight();
 		animateStackOnProgress(1f, true, 500);
 	}
@@ -436,7 +441,7 @@ public class SwipeStack extends ViewGroup {
 	 */
 	public void swipeTopViewToLeft() {
 		if (getChildCount() == 0) return;
-		setPreSwipeVariables();
+		rememberPositions();
 		mSwipeHelper.swipeViewToLeft();
 		animateStackOnProgress(1f, true, 500);
 	}
