@@ -83,7 +83,7 @@ public class MainActivity extends AppCompatActivity implements SwipeStack.SwipeS
 	}
 
 	private void fillWithTestData() {
-		for (int x = 0; x < 5; x++) {
+		for (int x = 0; x < 50; x++) {
 			mData.add(getString(R.string.dummy_text) + " " + (x + 1));
 		}
 	}
@@ -152,10 +152,13 @@ public class MainActivity extends AppCompatActivity implements SwipeStack.SwipeS
 	@Override public boolean onViewSwipedToRight(int position) {
 		String swipedElement = mAdapter.getItem(position);
 		Log.w("s", position + " > " + getString(R.string.view_swiped_right, swipedElement));
-		mData.remove(position);
-		mAdapter.notifyDataSetChanged();
+
 		showSwipeDialog();
 		return true;
+	}
+
+	@Override public void onViewTapped(int currentPosition) {
+		Log.w("tap", "tapped");
 	}
 
 	@Override public boolean onViewSwipedToLeft(int position) {

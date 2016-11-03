@@ -17,8 +17,10 @@
 package be.trikke.swipestack;
 
 import android.animation.Animator;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.LinearInterpolator;
 import android.view.animation.OvershootInterpolator;
 import be.trikke.swipestack.util.AnimationUtils;
 
@@ -38,12 +40,21 @@ public class SwipeHelper implements View.OnTouchListener {
 	private float mOpacityEnd = SwipeStack.DEFAULT_SWIPE_OPACITY;
 	private int mAnimationDuration = SwipeStack.DEFAULT_ANIMATION_DURATION;
 
+	private GestureDetector gestureDetector;
+
 	public SwipeHelper(SwipeStack swipeStack) {
 		mSwipeStack = swipeStack;
+
+		gestureDetector = new GestureDetector(mSwipeStack.getContext(), new GestureDetector.SimpleOnGestureListener() {
+			@Override public boolean onSingleTapConfirmed(MotionEvent e) {
+				mSwipeStack.onViewTapped();
+				return super.onSingleTapConfirmed(e);
+			}
+		});
 	}
 
 	@Override public boolean onTouch(View v, MotionEvent event) {
-
+		gestureDetector.onTouchEvent(event);
 		switch (event.getAction()) {
 			case MotionEvent.ACTION_DOWN:
 				if (!mListenForTouchEvents || !mSwipeStack.isEnabled()) {
@@ -55,7 +66,6 @@ public class SwipeHelper implements View.OnTouchListener {
 				mPointerId = event.getPointerId(0);
 				mDownX = event.getX(mPointerId);
 				mDownY = event.getY(mPointerId);
-
 				return true;
 
 			case MotionEvent.ACTION_MOVE:
@@ -76,7 +86,7 @@ public class SwipeHelper implements View.OnTouchListener {
 				mSwipeStack.onSwipeProgress(swipeProgress);
 
 				if (mRotateDegrees > 0) {
-					mObservedView.setRotation(mRotateDegrees * swipeProgress);
+					mObservedView.setRotation(newX / 60);
 				}
 
 				if (mOpacityEnd < 1f) {
@@ -106,10 +116,10 @@ public class SwipeHelper implements View.OnTouchListener {
 
 		if (viewCenterHorizontal < 0 && mSwipeStack.getAllowedSwipeDirections() != SwipeStack.SWIPE_DIRECTION_ONLY_RIGHT) {
 			mSwipeStack.onSwipeEnd(true);
-			swipeViewToLeft(mAnimationDuration);
+			swipeViewToLeft();
 		} else if (viewCenterHorizontal > mSwipeStack.getWidth() && mSwipeStack.getAllowedSwipeDirections() != SwipeStack.SWIPE_DIRECTION_ONLY_LEFT) {
 			mSwipeStack.onSwipeEnd(true);
-			swipeViewToRight(mAnimationDuration);
+			swipeViewToRight();
 		} else {
 			mSwipeStack.onSwipeEnd(false);
 			resetViewPosition();
@@ -122,6 +132,8 @@ public class SwipeHelper implements View.OnTouchListener {
 	}
 
 	private void resetViewPosition() {
+		mObservedView.animate().setListener(null).cancel();
+		mObservedView.clearAnimation();
 		mObservedView.animate()
 				.x(mInitialX)
 				.y(mInitialY)
@@ -132,33 +144,47 @@ public class SwipeHelper implements View.OnTouchListener {
 				.setListener(null);
 	}
 
-	private void swipeViewToLeft(int duration) {
+	void swipeViewToLeft() {
 		if (!mListenForTouchEvents) return;
 		mListenForTouchEvents = false;
-		mObservedView.animate().cancel();
+		mObservedView.animate().setListener(null).cancel();
+		mObservedView.clearAnimation();
 		mObservedView.animate()
 				.x(-mSwipeStack.getWidth() + mObservedView.getX())
 				.rotation(-mRotateDegrees)
 				.alpha(0f)
-				.setDuration(duration)
+				.setDuration(mAnimationDuration)
+				.setInterpolator(new LinearInterpolator())
 				.setListener(new AnimationUtils.AnimationEndListener() {
+					private boolean ended;
+
 					@Override public void onAnimationEnd(Animator animation) {
+						if (ended) return;
+
+						ended = true;
 						mSwipeStack.onViewSwipedToLeft();
 					}
 				});
 	}
 
-	private void swipeViewToRight(int duration) {
+	void swipeViewToRight() {
 		if (!mListenForTouchEvents) return;
 		mListenForTouchEvents = false;
-		mObservedView.animate().cancel();
+		mObservedView.animate().setListener(null).cancel();
+		mObservedView.clearAnimation();
 		mObservedView.animate()
 				.x(mSwipeStack.getWidth() + mObservedView.getX())
 				.rotation(mRotateDegrees)
 				.alpha(0f)
-				.setDuration(duration)
+				.setDuration(mAnimationDuration)
+				.setInterpolator(new LinearInterpolator())
 				.setListener(new AnimationUtils.AnimationEndListener() {
+					private boolean ended;
+
 					@Override public void onAnimationEnd(Animator animation) {
+						if (ended) return;
+
+						ended = true;
 						mSwipeStack.onViewSwipedToRight();
 					}
 				});
@@ -191,14 +217,6 @@ public class SwipeHelper implements View.OnTouchListener {
 
 	public void setOpacityEnd(float alpha) {
 		mOpacityEnd = alpha;
-	}
-
-	public void swipeViewToLeft() {
-		swipeViewToLeft(mAnimationDuration);
-	}
-
-	public void swipeViewToRight() {
-		swipeViewToRight(mAnimationDuration);
 	}
 
 	public float getInitialX() {

@@ -147,12 +147,12 @@ public class SwipeStack extends ViewGroup {
 			removeAllViewsInLayout();
 			return;
 		}
-
+		boolean addViews = false;
 		for (int x = getChildCount(); x < mNumberOfStackedViews && mCurrentViewIndex < mAdapter.getCount(); x++) {
 			addNextView();
+			addViews = true;
 		}
-
-		reorderItems();
+		if (addViews) reorderItems();
 
 		mIsFirstLayout = false;
 	}
@@ -235,7 +235,7 @@ public class SwipeStack extends ViewGroup {
 					childView.setTag(R.id.startScaleY, childView.getScaleY());
 				}
 
-				childView.animate().y(newPositionY).scaleX(scaleFactor).scaleY(scaleFactor).alpha(1).setDuration(100);
+				//childView.animate().y(newPositionY).scaleX(scaleFactor).scaleY(scaleFactor).alpha(1).setDuration(100);
 			} else {
 				childView.setY(newPositionY);
 				childView.setScaleY(scaleFactor);
@@ -249,6 +249,21 @@ public class SwipeStack extends ViewGroup {
 		}
 	}
 
+	private void animateStack() {
+		for (int x = 0; x < getChildCount() - 1; x++) {
+			View childView = getChildAt(x);
+			int topViewIndex = getChildCount() - 2;
+
+			int distanceToViewAbove = (topViewIndex * mViewSpacing) - (x * mViewSpacing);
+			int newPositionX = (getWidth() - childView.getMeasuredWidth()) / 2;
+			int newPositionY = distanceToViewAbove + getPaddingTop();
+
+			float scaleFactor = (float) Math.pow(mScaleFactor, getChildCount() - 2 - x);
+
+			childView.animate().y(newPositionY).x(newPositionX).scaleX(scaleFactor).scaleY(scaleFactor).alpha(1).setDuration(100);
+		}
+	}
+
 	private void rememberPositions() {
 		for (int x = 0; x < getChildCount(); x++) {
 			View childView = getChildAt(x);
@@ -259,7 +274,7 @@ public class SwipeStack extends ViewGroup {
 		}
 	}
 
-	private void animateStackOnProgress(float progress, boolean useAnimation, int animationTime) {
+	private void animateStackOnProgress(float progress, boolean useAnimation) {
 		progress = Math.abs(progress);
 		for (int x = 0; x < getChildCount(); x++) {
 			int topViewIndex = getChildCount() - 1;
@@ -282,12 +297,19 @@ public class SwipeStack extends ViewGroup {
 				float newPositionY = (float) (startPositionY - Math.ceil(diffPositionY * progress));
 				float newScaleX = startScaleX - (diffScaleX * progress);
 				float newScaleY = startScaleY - (diffScaleY * progress);
+
 				if (useAnimation) {
-					childView.animate().y(newPositionY).scaleX(newScaleX).scaleY(newScaleY).setDuration(animationTime);
+					childView.animate().cancel();
+					if (x == 0) {
+						childView.animate().alpha(progress).y(newPositionY).scaleX(newScaleX).scaleY(newScaleY).setDuration(mAnimationDuration);
+					} else {
+						childView.animate().y(newPositionY).scaleX(newScaleX).scaleY(newScaleY).setDuration(mAnimationDuration);
+					}
 				} else {
 					childView.setY(newPositionY);
 					childView.setScaleX(newScaleX);
 					childView.setScaleY(newScaleY);
+					if (x == 0) childView.setAlpha(progress);
 				}
 			}
 		}
@@ -299,7 +321,13 @@ public class SwipeStack extends ViewGroup {
 
 	public void resetSwipe() {
 		mSwipeHelper.resetTopViewToPosition();
-		animateStackOnProgress(0f, true, 100);
+		animateStackOnProgress(0f, false);
+	}
+
+	public void removeTopCard() {
+		rememberPositions();
+		animateStack();
+		removeTopView();
 	}
 
 	private void removeTopView() {
@@ -326,12 +354,12 @@ public class SwipeStack extends ViewGroup {
 
 	public void onSwipeProgress(float progress) {
 		if (mProgressListener != null) mProgressListener.onSwipeProgress(getCurrentPosition(), progress);
-		animateStackOnProgress(progress, false, 0);
+		animateStackOnProgress(progress, false);
 	}
 
 	public void onSwipeEnd(boolean swipeFullfilled) {
 		if (mProgressListener != null) mProgressListener.onSwipeEnd(getCurrentPosition());
-		animateStackOnProgress(swipeFullfilled ? 1f : 0f, true, 200);
+		animateStackOnProgress(swipeFullfilled ? 1f : 0f, true);
 	}
 
 	public void onViewSwipedToLeft() {
@@ -344,6 +372,10 @@ public class SwipeStack extends ViewGroup {
 		boolean blockRemovalTopView = false;
 		if (mListener != null) blockRemovalTopView = mListener.onViewSwipedToRight(getCurrentPosition());
 		if (!blockRemovalTopView) removeTopView();
+	}
+
+	public void onViewTapped() {
+		mListener.onViewTapped(getCurrentPosition());
 	}
 
 	/**
@@ -432,8 +464,9 @@ public class SwipeStack extends ViewGroup {
 	public void swipeTopViewToRight() {
 		if (getChildCount() == 0) return;
 		rememberPositions();
+		animateStack();
 		mSwipeHelper.swipeViewToRight();
-		animateStackOnProgress(1f, true, 500);
+		//animateStackOnProgress(1f, true, 200);
 	}
 
 	/**
@@ -442,8 +475,9 @@ public class SwipeStack extends ViewGroup {
 	public void swipeTopViewToLeft() {
 		if (getChildCount() == 0) return;
 		rememberPositions();
+		animateStack();
 		mSwipeHelper.swipeViewToLeft();
-		animateStackOnProgress(1f, true, 500);
+		//animateStackOnProgress(1f, true, 200);
 	}
 
 	/**
@@ -476,10 +510,13 @@ public class SwipeStack extends ViewGroup {
 		 */
 		boolean onViewSwipedToRight(int position);
 
+		void onViewTapped(int currentPosition);
+
 		/**
 		 * Called when the last view has been dismissed.
 		 */
 		void onStackEmpty();
+
 	}
 
 	/**

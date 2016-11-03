@@ -31,6 +31,9 @@
         android:layout_height="match_parent"
         android:layout_above="@+id/buttonSwipeLeft"
         android:padding="@dimen/padding_swipestack"
+		app:stack_spacing="0dp"
+        app:swipe_rotation="30"
+        app:animation_duration="700"
         app:scale_factor="0.9"
         app:stack_rotation="0"
         app:stack_size="4"/>
