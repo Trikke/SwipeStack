@@ -60,10 +60,10 @@ public class SwipeHelper implements View.OnTouchListener {
 				if (!mListenForTouchEvents || !mSwipeStack.isEnabled()) {
 					return false;
 				}
-
+				mListenForTouchEvents = false;
 				v.getParent().requestDisallowInterceptTouchEvent(true);
 				mSwipeStack.onSwipeStart();
-				mPointerId = event.getPointerId(0);
+				mPointerId = (event.getAction() & MotionEvent.ACTION_POINTER_INDEX_MASK) >> MotionEvent.ACTION_POINTER_INDEX_SHIFT;
 				mDownX = event.getX(mPointerId);
 				mDownY = event.getY(mPointerId);
 				return true;
@@ -96,6 +96,7 @@ public class SwipeHelper implements View.OnTouchListener {
 				return true;
 
 			case MotionEvent.ACTION_UP:
+				mListenForTouchEvents = true;
 				v.getParent().requestDisallowInterceptTouchEvent(false);
 				checkViewPosition();
 
@@ -135,13 +136,13 @@ public class SwipeHelper implements View.OnTouchListener {
 		mObservedView.animate().setListener(null).cancel();
 		mObservedView.clearAnimation();
 		mObservedView.animate()
-				.x(mInitialX)
-				.y(mInitialY)
-				.rotation(0)
-				.alpha(1)
-				.setDuration(mAnimationDuration)
-				.setInterpolator(new OvershootInterpolator(1.4f))
-				.setListener(null);
+		             .x(mInitialX)
+		             .y(mInitialY)
+		             .rotation(0)
+		             .alpha(1)
+		             .setDuration(mAnimationDuration)
+		             .setInterpolator(new OvershootInterpolator(1.4f))
+		             .setListener(null);
 	}
 
 	void swipeViewToLeft() {
@@ -150,21 +151,21 @@ public class SwipeHelper implements View.OnTouchListener {
 		mObservedView.animate().setListener(null).cancel();
 		mObservedView.clearAnimation();
 		mObservedView.animate()
-				.x(-mSwipeStack.getWidth() + mObservedView.getX())
-				.rotation(-mRotateDegrees)
-				.alpha(0f)
-				.setDuration(mAnimationDuration)
-				.setInterpolator(new LinearInterpolator())
-				.setListener(new AnimationUtils.AnimationEndListener() {
-					private boolean ended;
+		             .x(-mSwipeStack.getWidth() + mObservedView.getX())
+		             .rotation(-mRotateDegrees)
+		             .alpha(0f)
+		             .setDuration(mAnimationDuration)
+		             .setInterpolator(new LinearInterpolator())
+		             .setListener(new AnimationUtils.AnimationEndListener() {
+			             private boolean ended;
 
-					@Override public void onAnimationEnd(Animator animation) {
-						if (ended) return;
+			             @Override public void onAnimationEnd(Animator animation) {
+				             if (ended) return;
 
-						ended = true;
-						mSwipeStack.onViewSwipedToLeft();
-					}
-				});
+				             ended = true;
+				             mSwipeStack.onViewSwipedToLeft();
+			             }
+		             });
 	}
 
 	void swipeViewToRight() {
@@ -173,21 +174,21 @@ public class SwipeHelper implements View.OnTouchListener {
 		mObservedView.animate().setListener(null).cancel();
 		mObservedView.clearAnimation();
 		mObservedView.animate()
-				.x(mSwipeStack.getWidth() + mObservedView.getX())
-				.rotation(mRotateDegrees)
-				.alpha(0f)
-				.setDuration(mAnimationDuration)
-				.setInterpolator(new LinearInterpolator())
-				.setListener(new AnimationUtils.AnimationEndListener() {
-					private boolean ended;
+		             .x(mSwipeStack.getWidth() + mObservedView.getX())
+		             .rotation(mRotateDegrees)
+		             .alpha(0f)
+		             .setDuration(mAnimationDuration)
+		             .setInterpolator(new LinearInterpolator())
+		             .setListener(new AnimationUtils.AnimationEndListener() {
+			             private boolean ended;
 
-					@Override public void onAnimationEnd(Animator animation) {
-						if (ended) return;
+			             @Override public void onAnimationEnd(Animator animation) {
+				             if (ended) return;
 
-						ended = true;
-						mSwipeStack.onViewSwipedToRight();
-					}
-				});
+				             ended = true;
+				             mSwipeStack.onViewSwipedToRight();
+			             }
+		             });
 	}
 
 	public void registerObservedView(View view, float initialX, float initialY) {
