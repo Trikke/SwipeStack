@@ -30,6 +30,8 @@ import android.widget.Adapter;
 import android.widget.FrameLayout;
 import java.util.Random;
 
+import static android.R.attr.x;
+
 public class SwipeStack extends ViewGroup {
 
 	public static final int SWIPE_DIRECTION_BOTH = 0;
@@ -62,7 +64,6 @@ public class SwipeStack extends ViewGroup {
 	private boolean mDisableHwAcceleration;
 	private boolean mIsFirstLayout = true;
 
-	private View mTopView;
 	private SwipeHelper mSwipeHelper;
 	private DataSetObserver mDataObserver;
 	private SwipeStackListener mListener;
@@ -153,6 +154,7 @@ public class SwipeStack extends ViewGroup {
 			addViews = true;
 		}
 		if (addViews) reorderItems();
+		registerTopView();
 
 		mIsFirstLayout = false;
 	}
@@ -196,6 +198,20 @@ public class SwipeStack extends ViewGroup {
 		}
 	}
 
+	private void registerTopView() {
+		int topViewIndex = getChildCount() - 1;
+		View topView = getChildAt(topViewIndex);
+		if (topView != null) {
+
+			int distanceToViewAbove = (topViewIndex * mViewSpacing) - (x * mViewSpacing);
+			int newPositionX = (getWidth() - topView.getMeasuredWidth()) / 2;
+			int newPositionY = distanceToViewAbove + getPaddingTop();
+
+			mSwipeHelper.unregisterObservedView();
+			mSwipeHelper.registerObservedView(topView, newPositionX, newPositionY);
+		}
+	}
+
 	private void reorderItems() {
 		for (int x = 0; x < getChildCount(); x++) {
 			View childView = getChildAt(x);
@@ -215,9 +231,6 @@ public class SwipeStack extends ViewGroup {
 			float scaleFactor = (float) Math.pow(mScaleFactor, getChildCount() - x);
 
 			if (x == topViewIndex) {
-				mSwipeHelper.unregisterObservedView();
-				mTopView = childView;
-				mSwipeHelper.registerObservedView(mTopView, newPositionX, newPositionY);
 				scaleFactor = 1;
 			}
 
@@ -331,9 +344,10 @@ public class SwipeStack extends ViewGroup {
 	}
 
 	private void removeTopView() {
-		if (mTopView != null) {
-			removeView(mTopView);
-			mTopView = null;
+		int topViewIndex = getChildCount() - 1;
+		View topView = getChildAt(topViewIndex);
+		if (topView != null) {
+			removeView(topView);
 		}
 
 		if (getChildCount() == 0) {
@@ -455,7 +469,8 @@ public class SwipeStack extends ViewGroup {
 	 * @return The view if the stack is not empty or null otherwise.
 	 */
 	public View getTopView() {
-		return mTopView;
+		int topViewIndex = getChildCount() - 1;
+		return getChildAt(topViewIndex);
 	}
 
 	/**
@@ -516,7 +531,6 @@ public class SwipeStack extends ViewGroup {
 		 * Called when the last view has been dismissed.
 		 */
 		void onStackEmpty();
-
 	}
 
 	/**

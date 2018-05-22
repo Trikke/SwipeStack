@@ -83,7 +83,7 @@ public class MainActivity extends AppCompatActivity implements SwipeStack.SwipeS
 	}
 
 	private void fillWithTestData() {
-		for (int x = 0; x < 50; x++) {
+		for (int x = 0; x < 10; x++) {
 			mData.add(getString(R.string.dummy_text) + " " + (x + 1));
 		}
 	}
